@@ -5,12 +5,13 @@ $plxPlugin=$plxMotor->plxPlugins->getInstance('cryptMyPluxml');
 
 if (!empty($_GET['deletetoken']) && !empty($_GET['pasteid'])) // Delete an existing paste
 {
-    list ($plxPlugin->CIPHERDATA, $plxPlugin->ERRORMESSAGE, $plxPlugin->STATUS) = processPasteDelete(plxUtils::strCheck(plxUtils::nullbyteRemove($_GET['pasteid'])),plxUtils::strCheck(plxUtils::nullbyteRemove($_GET['deletetoken'])));
+    list ($plxPlugin->CIPHERDATA, $plxPlugin->ERRORMESSAGE, $plxPlugin->STATUS) = cmp_processPasteDelete(plxUtils::strCheck(plxUtils::nullbyteRemove($_GET['pasteid'])),plxUtils::strCheck(plxUtils::nullbyteRemove($_GET['deletetoken'])));
 }
 elseif (!empty($_SERVER['QUERY_STRING']))  // Return an existing paste.
 {	
 	$zb = preg_replace('!(a=[0-9]+&)*zb=!', '', plxUtils::getGets($_SERVER['QUERY_STRING']));
-    list ($plxPlugin->CIPHERDATA, $plxPlugin->ERRORMESSAGE, $plxPlugin->STATUS) = processPasteFetch($zb);
+	$zb = str_replace(array('zb=','zb/'), '', $zb);
+    list ($plxPlugin->CIPHERDATA, $plxPlugin->ERRORMESSAGE, $plxPlugin->STATUS) = cmp_processPasteFetch($zb);
 }
 
 ?>

@@ -144,7 +144,17 @@ function scriptLocation() {
  *   eg. 'c05354954c49a487'
  */
 function pasteID() {
-    return window.location.search.substring(1);
+    var id = window.location.search.substring(1);
+    if (id == '') {
+        var scriptLocation = window.location.href.substring(0,window.location.href.length
+    - window.location.search.length - window.location.hash.length);
+        scriptLocation = scriptLocation.substring(0, window.location.href.length);
+        var hashIndex = scriptLocation.indexOf("zb/");
+        if (hashIndex !== -1) {
+            id = scriptLocation.substring(hashIndex).replace('zb/','');
+        }
+    }
+   return id;
 }
 
 function htmlEntities(str) {
@@ -289,7 +299,8 @@ function send_comment(parentid) {
         return;
     }
     parentid = parentid.replace('zb=','');
-    
+    parentid = parentid.replace('zb/','');
+
     showStatus('Sending comment...', spin=true);
     var cipherdata = zeroCipher(pageKey(), $('textarea#replymessage').val());
     var ciphernickname = '';

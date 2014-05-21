@@ -39,8 +39,8 @@
  * 
  *
  *
- * @version	1.0
- * @date	02/05/2014
+ * @version	1.1
+ * @date	21/05/2014
  * @author	Cyril MAGUIRE
  **/
 include 'functions.php';
@@ -65,13 +65,13 @@ class cryptMyPluxml extends plxPlugin {
 		if(defined('PLX_ADMIN')) {
 			if (!empty($_GET['deletetoken']) && !empty($_GET['pasteid'])) // Delete an existing paste
 			{
-			    list ($this->CIPHERDATA, $this->ERRORMESSAGE, $this->STATUS) = processPasteDelete(plxUtils::strCheck(plxUtils::nullbyteRemove($_GET['pasteid'])),plxUtils::strCheck(plxUtils::nullbyteRemove($_GET['deletetoken'])));
+			    list ($this->CIPHERDATA, $this->ERRORMESSAGE, $this->STATUS) = cmp_processPasteDelete(plxUtils::strCheck(plxUtils::nullbyteRemove($_GET['pasteid'])),plxUtils::strCheck(plxUtils::nullbyteRemove($_GET['deletetoken'])));
 			}
 			elseif (!empty($_SERVER['QUERY_STRING']))  // Return an existing paste.
 			{	
 				$zb = preg_replace('!(a=[0-9]+&?)*(zb=)?!', '', plxUtils::getGets($_SERVER['QUERY_STRING']));
 				if (!empty($zb)) {
-					 list ($this->CIPHERDATA, $this->ERRORMESSAGE, $this->STATUS) = processPasteFetch($zb);
+					 list ($this->CIPHERDATA, $this->ERRORMESSAGE, $this->STATUS) = cmp_processPasteFetch($zb);
 				}
 			}
 		}
@@ -251,7 +251,7 @@ class cryptMyPluxml extends plxPlugin {
 		    }
 
 		    // Make sure last paste from the IP address was more than 10 seconds ago.
-		    if (!trafic_limiter_canPass($_SERVER['REMOTE_ADDR']))
+		    if (!cmp_trafic_limiter_canPass($_SERVER['REMOTE_ADDR']))
 		        { echo json_encode(array('status'=>1,'message'=>'Please wait 10 seconds between each post.')); exit; }
 
 		    // Make sure content is not too big.
@@ -260,7 +260,7 @@ class cryptMyPluxml extends plxPlugin {
 		        { echo json_encode(array('status'=>1,'message'=>'Paste is limited to 2 Mb of encrypted data.')); exit; }
 
 		    // Make sure format is correct.
-		    if (!validSJCL($data))
+		    if (!cmp_validSJCL($data))
 		        { echo json_encode(array('status'=>1,'message'=>'Invalid data.')); exit; }
 
 		    // Read additional meta-information.
@@ -310,7 +310,7 @@ class cryptMyPluxml extends plxPlugin {
 		    if (!empty($_POST['nickname']))
 		    {
 		        $nick = $_POST['nickname'];
-		        if (!validSJCL($nick))
+		        if (!cmp_validSJCL($nick))
 		        {
 		            $error=true;
 		        }
@@ -322,7 +322,7 @@ class cryptMyPluxml extends plxPlugin {
 		            // If a nickname is provided, we generate a Vizhash.
 		            // (We assume that if the user did not enter a nickname, he/she wants
 		            // to be anonymous and we will not generate the vizhash.)
-		            $vz = new vizhash16x16();
+		            $vz = new cmp_vizhash16x16();
 		            $pngdata = $vz->generate($_SERVER['REMOTE_ADDR']);
 		            if ($pngdata!='') $meta['vizhash'] = 'data:image/png;base64,'.base64_encode($pngdata);
 		            // Once the avatar is generated, we do not keep the IP address, nor its hash.
@@ -357,14 +357,14 @@ class cryptMyPluxml extends plxPlugin {
 		        unset($storage['syntaxcoloring']);
 
 		        // Make sure paste exists.
-		        $storagedir = dataid2path($pasteid);
+		        $storagedir = cmp_dataid2path($pasteid);
 		        if (!is_file($storagedir.$pasteid)) { echo json_encode(array('status'=>1,'message'=>'Invalid data.')); exit; }
 
 		        // Make sure the discussion is opened in this paste.
 		        $paste=json_decode(file_get_contents($storagedir.$pasteid));
 		        if (!$paste->meta->opendiscussion) { echo json_encode(array('status'=>1,'message'=>'Invalid data.')); exit; }
 
-		        $discdir = dataid2discussionpath($pasteid);
+		        $discdir = cmp_dataid2discussionpath($pasteid);
 		        $filename = $pasteid.'.'.$dataid.'.'.$parentid;
 		        if (!is_dir($discdir)) mkdir($discdir,$mode=0705,$recursive=true);
 		        if (is_file($discdir.$filename)) // Oups... improbable collision.
@@ -379,7 +379,7 @@ class cryptMyPluxml extends plxPlugin {
 		    }
 		    else // a standard paste.
 		    {
-		        $storagedir = dataid2path($dataid);
+		        $storagedir = cmp_dataid2path($dataid);
 		        if (!is_dir($storagedir)) mkdir($storagedir,$mode=0705,$recursive=true);
 		        if (is_file($storagedir.$dataid)) // Oups... improbable collision.
 		        {
@@ -392,7 +392,7 @@ class cryptMyPluxml extends plxPlugin {
 		        // Generate the "delete" token.
 		        // The token is the hmac of the pasteid signed with the server salt.
 		        // The paste can be delete by calling http://myserver.com/zerobin/?pasteid=<pasteid>&deletetoken=<deletetoken>
-		        $deletetoken = hash_hmac('sha1', $dataid , getServerSalt());
+		        $deletetoken = hash_hmac('sha1', $dataid , cmp_getServerSalt());
 
 		        echo json_encode(array('status'=>0,'id'=>$dataid,'deletetoken'=>$deletetoken)); // 0 = no error
 		        exit;

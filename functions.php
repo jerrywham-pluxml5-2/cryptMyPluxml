@@ -19,7 +19,7 @@ if (get_magic_quotes_gpc())
 
 // trafic_limiter : Make sure the IP address makes at most 1 request every 10 seconds.
 // Will return false if IP address made a call less than 10 seconds ago.
-function trafic_limiter_canPass($ip)
+function cmp_trafic_limiter_canPass($ip)
 {
     $tfilename=PLX_ROOT.'data/zb/trafic_limiter.php';
     if (!is_file($tfilename))
@@ -41,7 +41,7 @@ function trafic_limiter_canPass($ip)
 
 // Constant time string comparison.
 // (Used to deter time attacks on hmac checking. See section 2.7 of https://defuse.ca/audits/zerobin.htm)
-function slow_equals($a, $b)
+function cmp_slow_equals($a, $b)
 {
     $diff = strlen($a) ^ strlen($b);
     for($i = 0; $i < strlen($a) && $i < strlen($b); $i++)
@@ -60,7 +60,7 @@ function slow_equals($a, $b)
 
    eg. input 'e3570978f9e4aa90' --> output 'data/e3/57/'
 */
-function dataid2path($dataid)
+function cmp_dataid2path($dataid)
 {
     return PLX_ROOT.'data/zb/'.substr($dataid,0,2).'/'.substr($dataid,2,2).'/';
 }
@@ -68,14 +68,14 @@ function dataid2path($dataid)
 /* Convert paste id to discussion storage path.
    eg. 'e3570978f9e4aa90' --> 'data/e3/57/e3570978f9e4aa90.discussion/'
 */
-function dataid2discussionpath($dataid)
+function cmp_dataid2discussionpath($dataid)
 {
-    return dataid2path($dataid).$dataid.'.discussion/';
+    return cmp_dataid2path($dataid).$dataid.'.discussion/';
 }
 
 // Checks if a json string is a proper SJCL encrypted message.
 // False if format is incorrect.
-function validSJCL($jsonstring)
+function cmp_validSJCL($jsonstring)
 {
     $accepted_keys=array('iv','v','iter','ks','ts','mode','adata','cipher','salt','ct');
 
@@ -110,13 +110,13 @@ function validSJCL($jsonstring)
 
 // Delete a paste and its discussion.
 // Input: $pasteid : the paste identifier.
-function deletePaste($pasteid)
+function cmp_deletePaste($pasteid)
 {
     // Delete the paste itself
-    unlink(dataid2path($pasteid).$pasteid);
+    unlink(cmp_dataid2path($pasteid).$pasteid);
 
     // Delete discussion if it exists.
-    $discdir = dataid2discussionpath($pasteid);
+    $discdir = cmp_dataid2discussionpath($pasteid);
     if (is_dir($discdir))
     {
         // Delete all files in discussion directory
@@ -130,7 +130,7 @@ function deletePaste($pasteid)
         // Delete the discussion directory.
         rmdir($discdir);
     }
-    $subdir = dataid2path($pasteid);
+    $subdir = cmp_dataid2path($pasteid);
     $maindir = substr($subdir,0,-4);
     rmdir($subdir);
     rmdir($maindir);
@@ -139,11 +139,11 @@ function deletePaste($pasteid)
 /* Process a paste deletion request.
    Returns an array ('',$ERRORMESSAGE,$STATUS)
 */
-function processPasteDelete($pasteid,$deletetoken)
+function cmp_processPasteDelete($pasteid,$deletetoken)
 {
     if (preg_match('/\A[a-f\d]{16}\z/',$pasteid))  // Is this a valid paste identifier ?
     {
-        $filename = dataid2path($pasteid).$pasteid;
+        $filename = cmp_dataid2path($pasteid).$pasteid;
         if (!is_file($filename)) // Check that paste exists.
         {
             return array('','Paste does not exist, has expired or has been deleted.','');
@@ -154,25 +154,25 @@ function processPasteDelete($pasteid,$deletetoken)
         return array('','Invalid data','');
     }
 
-    if (!slow_equals($deletetoken, hash_hmac('sha1', $pasteid , getServerSalt()))) // Make sure token is valid.
+    if (!cmp_slow_equals($deletetoken, hash_hmac('sha1', $pasteid , getServerSalt()))) // Make sure token is valid.
     {
         return array('','Wrong deletion token. Paste was not deleted.','');
     }
 
     // Paste exists and deletion token is valid: Delete the paste.
-    deletePaste($pasteid);
+    cmp_deletePaste($pasteid);
     return array('','','Paste was properly deleted.');
 }
 
 /* Process a paste fetch request.
    Returns an array ($CIPHERDATA,$ERRORMESSAGE,$STATUS)
 */
-function processPasteFetch($pasteid)
+function cmp_processPasteFetch($pasteid)
 {
     $pasteid = str_replace(array('zb=','zb/'), '', $pasteid);
     if (preg_match('/\A[a-f\d]{16}\z/',$pasteid))  // Is this a valid paste identifier ?
     {
-        $filename = dataid2path($pasteid).$pasteid;
+        $filename = cmp_dataid2path($pasteid).$pasteid;
         if (!is_file($filename)) // Check that paste exists.
         {
             return array('','Paste does not exist, has expired or has been deleted.','');
@@ -189,7 +189,7 @@ function processPasteFetch($pasteid)
     // See if paste has expired.
     if (isset($paste->meta->expire_date) && $paste->meta->expire_date<time())
     {
-        deletePaste($pasteid);  // Delete the paste
+        cmp_deletePaste($pasteid);  // Delete the paste
         return array('','Paste does not exist, has expired or has been deleted.','');
     }
 
@@ -202,7 +202,7 @@ function processPasteFetch($pasteid)
     if (property_exists($paste->meta, 'opendiscussion') && $paste->meta->opendiscussion)
     {
         $comments=array();
-        $datadir = dataid2discussionpath($pasteid);
+        $datadir = cmp_dataid2discussionpath($pasteid);
         if (!is_dir($datadir)) mkdir($datadir,$mode=0705,$recursive=true);
         $dhandle = opendir($datadir);
         while (false !== ($filename = readdir($dhandle)))
@@ -228,7 +228,7 @@ function processPasteFetch($pasteid)
     # si affichage des articles coté visiteurs:
     if(!defined('PLX_ADMIN')) {
         // If the paste was meant to be read only once, delete it.
-        if (property_exists($paste->meta, 'burnafterreading') && $paste->meta->burnafterreading) {deletePaste($pasteid);}
+        if (property_exists($paste->meta, 'burnafterreading') && $paste->meta->burnafterreading) {cmp_deletePaste($pasteid);}
     }
 
     return array($CIPHERDATA,'','');

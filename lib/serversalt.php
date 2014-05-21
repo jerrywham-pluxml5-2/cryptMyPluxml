@@ -1,7 +1,7 @@
 <?php
 
 // Generate a large random hexadecimal salt.
-function generateRandomSalt()
+function cmp_generateRandomSalt()
 {
     $randomSalt='';
     if (function_exists("mcrypt_create_iv"))
@@ -23,11 +23,11 @@ function generateRandomSalt()
       - to generate unique VizHash in discussions (which are not reproductible across ZeroBin servers)
       - to generate unique deletion token (which are not re-usable across ZeroBin servers)
 */
-function getServerSalt()
+function cmp_getServerSalt()
 {
     $saltfile = PLX_ROOT.'data/salt.php';
     if (!is_file($saltfile))
-        file_put_contents($saltfile,'<?php /* |'.generateRandomSalt().'| */ ?>',LOCK_EX);
+        file_put_contents($saltfile,'<?php /* |'.cmp_generateRandomSalt().'| */ ?>',LOCK_EX);
     $items=explode('|',file_get_contents($saltfile));
     return $items[1];
 

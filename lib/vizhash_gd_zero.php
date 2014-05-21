@@ -12,7 +12,7 @@
     exit;
 */
 require_once "serversalt.php";
-class vizhash16x16
+class cmp_vizhash16x16
 {
     private $VALUES;
     private $VALUES_INDEX;
@@ -23,7 +23,7 @@ class vizhash16x16
     {
         $this->width=16;
         $this->height=16;
-        $this->salt = getServerSalt();
+        $this->salt = cmp_getServerSalt();
     }  
     
     // Generate a 16x16 png corresponding to $text.
